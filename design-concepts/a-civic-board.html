@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BloodLink concept A: Civic board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800;900&display=swap" rel="stylesheet" />
+<style>
+  /* Concept A: a public-service notice board. White paper, one signal red, a strict grid.
+     The memorable thing is the 8-group board: demand per blood group, readable from across a room. */
+  :root {
+    --paper: #ffffff;
+    --wash: #f5f7fa;
+    --ink: #0f1b2d;
+    --muted: #5a6577;
+    --rule: #dde2ea;
+    --signal: #c8102e;
+    --ok: #1e7a4f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 'Schibsted Grotesk', system-ui, sans-serif; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--signal); outline-offset: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+  header { border-bottom: 1px solid var(--rule); }
+  header .wrap { display: flex; align-items: center; gap: 24px; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 20px; text-decoration: none; letter-spacing: -0.02em; }
+  .logo span { width: 26px; height: 26px; background: var(--signal); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+  nav { margin-left: auto; display: flex; gap: 22px; align-items: center; font-weight: 500; font-size: 15px; }
+  nav a { text-decoration: none; color: var(--muted); }
+  nav a:hover { color: var(--ink); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; font: 600 16px 'Schibsted Grotesk', sans-serif; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); text-decoration: none; cursor: pointer; border-radius: 6px; }
+  .btn.primary { background: var(--signal); border-color: var(--signal); color: #fff; }
+  .btn.small { min-height: 40px; padding: 0 16px; font-size: 15px; }
+
+  .hero { display: grid; grid-template-columns: 5fr 7fr; gap: 56px; padding: 56px 0 40px; align-items: end; }
+  h1 { font-size: clamp(40px, 6vw, 76px); line-height: 0.95; letter-spacing: -0.035em; font-weight: 900; margin: 0; }
+  .lede { font-size: 19px; color: var(--muted); max-width: 34ch; margin: 20px 0 28px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .updated { margin-top: 28px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .updated i { width: 8px; height: 8px; border-radius: 50%; background: var(--signal); animation: blink 1.6s infinite; }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* The board */
+  .board-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .board-head h2 { margin: 0; font-size: 18px; }
+  .board-head p { margin: 0; font-size: 14px; color: var(--muted); }
+  .board { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); border-left: 1px solid var(--rule); }
+  .cell { position: relative; aspect-ratio: 1 / 0.82; padding: 14px 16px; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); background: var(--paper); text-align: left; font: inherit; color: inherit; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; }
+  .cell:hover { background: var(--wash); }
+  .cell .g { font-size: clamp(34px, 4.4vw, 56px); font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+  .cell .n { font-size: 14px; color: var(--muted); }
+  .cell .n b { color: var(--ink); font-size: 18px; }
+  .cell .bar { position: absolute; left: 0; bottom: 0; height: 6px; background: var(--signal); }
+  .cell.hot { background: var(--signal); color: #fff; }
+  .cell.hot .n, .cell.hot .n b { color: #fff; }
+  .cell.hot .bar { background: #fff; opacity: 0.6; }
+  .cell[aria-pressed='true'] { outline: 3px solid var(--ink); outline-offset: -3px; }
+
+  /* Requests table */
+  .list { padding: 8px 0 72px; }
+  .list-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid var(--ink); padding-bottom: 10px; }
+  .list-head h2 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+  .list-head button { background: none; border: 0; font: inherit; color: var(--signal); font-weight: 600; cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 13px; font-weight: 500; color: var(--muted); padding: 12px 8px; border-bottom: 1px solid var(--rule); }
+  td { padding: 16px 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+  tr:hover td { background: var(--wash); }
+  .grp { font-weight: 900; font-size: 22px; letter-spacing: -0.03em; }
+  .hosp { font-weight: 600; }
+  .sub { font-size: 14px; color: var(--muted); }
+  .tag { display: inline-block; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--wash); }
+  .tag.critical { background: var(--signal); color: #fff; }
+  .tag.urgent { background: #fdecc8; color: #6b4300; }
+  .coming { color: var(--ok); font-weight: 600; font-size: 14px; }
+  td.go { text-align: right; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 32px; }
+    nav a.hide-sm { display: none; }
+    th.hide-sm, td.hide-sm { display: none; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px; }
+    .cell { aspect-ratio: 1 / 1; padding: 10px; }
+    .cell .n { font-size: 12px; }
+    td.go .btn { padding: 0 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .updated i { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#"><span aria-hidden="true"></span>BloodLink</a>
+    <nav>
+      <a class="hide-sm" href="#">How it works</a>
+      <a class="hide-sm" href="#">Who can donate</a>
+      <a href="#">Log in</a>
+      <a class="btn small primary" href="#">Post a request</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>Blood needed in Delhi today</h1>
+      <p class="lede">Post a request and every compatible donor near the hospital gets an alert. Donors say yes in one tap.</p>
+      <div class="actions">
+        <a class="btn primary" href="#">Post a blood request</a>
+        <a class="btn" href="#">Become a donor</a>
+      </div>
+      <p class="updated"><i aria-hidden="true"></i>Updates live as requests open and close</p>
+    </div>
+
+    <div>
+      <div class="board-head">
+        <h2>Open requests by blood group</h2>
+        <p>Tap a group to filter</p>
+      </div>
+      <div class="board" id="board"></div>
+    </div>
+  </section>
+
+  <section class="list">
+    <div class="list-head">
+      <h2 id="listTitle">All open requests</h2>
+      <button id="clear" hidden>Show all groups</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Group</th><th>Hospital</th><th class="hide-sm">Needed</th><th class="hide-sm">Urgency</th><th></th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  const requests = [
+    { g: 'O-', hosp: 'AIIMS, Ansari Nagar', units: 2, km: 3.2, needed: 'in 2 h', urgency: 'critical', coming: 1 },
+    { g: 'B+', hosp: 'Safdarjung Hospital', units: 1, km: 4.1, needed: 'in 6 h', urgency: 'urgent', coming: 3 },
+    { g: 'O-', hosp: 'Max Super Speciality, Saket', units: 3, km: 8.7, needed: 'in 5 h', urgency: 'urgent', coming: 0 },
+    { g: 'A+', hosp: 'Ram Manohar Lohia Hospital', units: 1, km: 2.4, needed: 'tomorrow', urgency: 'normal', coming: 2 },
+    { g: 'AB-', hosp: 'Fortis, Vasant Kunj', units: 2, km: 11.3, needed: 'in 3 h', urgency: 'critical', coming: 0 },
+    { g: 'O+', hosp: 'Lok Nayak Hospital', units: 2, km: 5.6, needed: 'in 9 h', urgency: 'urgent', coming: 1 },
+    { g: 'B-', hosp: 'Sir Ganga Ram Hospital', units: 1, km: 6.0, needed: 'in 2 days', urgency: 'normal', coming: 0 },
+    { g: 'O-', hosp: 'Apollo, Sarita Vihar', units: 1, km: 14.8, needed: 'in 4 h', urgency: 'urgent', coming: 0 },
+  ];
+  const groups = ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'];
+  const label = { critical: 'Critical', urgent: 'Urgent', normal: 'Normal' };
+  let filter = null;
+
+  function renderBoard() {
+    const max = Math.max(...groups.map((g) => requests.filter((r) => r.g === g).length));
+    document.getElementById('board').innerHTML = groups.map((g) => {
+      const n = requests.filter((r) => r.g === g).length;
+      return `<button class="cell ${n === max ? 'hot' : ''}" aria-pressed="${filter === g}" data-g="${g}">
+        <span class="g">${g}</span>
+        <span class="n">${n ? `<b>${n}</b> open` : 'None open'}</span>
+        <span class="bar" style="width:${(n / max) * 100}%"></span>
+      </button>`;
+    }).join('');
+  }
+
+  function renderRows() {
+    const list = filter ? requests.filter((r) => r.g === filter) : requests;
+    document.getElementById('listTitle').textContent = filter ? `${filter} requests` : 'All open requests';
+    document.getElementById('clear').hidden = !filter;
+    document.getElementById('rows').innerHTML = list.map((r) => `
+      <tr>
+        <td class="grp">${r.g}</td>
+        <td><div class="hosp">${r.hosp}</div><div class="sub">${r.units} unit${r.units > 1 ? 's' : ''}, ${r.km} km away${r.coming ? ` <span class="coming">${r.coming} coming</span>` : ''}</div></td>
+        <td class="hide-sm">${r.needed}</td>
+        <td class="hide-sm"><span class="tag ${r.urgency}">${label[r.urgency]}</span></td>
+        <td class="go"><a class="btn small" href="#">View</a></td>
+      </tr>`).join('') || '<tr><td colspan="5" class="sub">No open requests for this group.</td></tr>';
+  }
+
+  document.getElementById('board').addEventListener('click', (e) => {
+    const cell = e.target.closest('.cell');
+    if (!cell) return;
+    filter = filter === cell.dataset.g ? null : cell.dataset.g;
+    renderBoard();
+    renderRows();
+  });
+  document.getElementById('clear').addEventListener('click', () => { filter = null; renderBoard(); renderRows(); });
+  renderBoard();
+  renderRows();
+</script>
+</body>
+</html>

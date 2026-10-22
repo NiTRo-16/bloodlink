@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BloodLink concept C: Community</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* Concept C: people helping people. A blush page, deep wine type, a friendly serif for headlines.
+     The memorable thing is the "who can you help?" explorer: pick your group, see who your blood reaches. */
+  :root {
+    --blush: #fbf2f3;
+    --petal: #f3dce0;
+    --card: #ffffff;
+    --wine: #5e0c20;
+    --blood: #b3122e;
+    --ink: #2b1a1f;
+    --muted: #7a6267;
+    --leaf: #2f6b4f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--blush); color: var(--ink); font: 17px/1.55 'Figtree', system-ui, sans-serif; }
+  :focus-visible { outline: 3px solid var(--wine); outline-offset: 2px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  h1, h2 { font-family: 'Young Serif', Georgia, serif; font-weight: 400; color: var(--wine); margin: 0; }
+
+  header .wrap { display: flex; align-items: center; height: 72px; gap: 20px; }
+  .logo { font-family: 'Young Serif', serif; font-size: 24px; color: var(--wine); text-decoration: none; display: flex; align-items: center; gap: 8px; }
+  nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 24px; border-radius: 999px; font: 600 16px 'Figtree', sans-serif; text-decoration: none; border: 0; cursor: pointer; }
+  .btn.solid { background: var(--blood); color: #fff; }
+  .btn.soft { background: var(--card); color: var(--wine); }
+  .btn.ghost { background: transparent; color: var(--wine); }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; padding: 48px 0 64px; align-items: start; }
+  h1 { font-size: clamp(42px, 5.6vw, 72px); line-height: 1.02; letter-spacing: -0.01em; max-width: 13ch; }
+  .lede { font-size: 20px; color: var(--muted); max-width: 36ch; margin: 22px 0 30px; }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* Live feed of donors saying yes. First names only. */
+  .feed { background: var(--card); border-radius: 28px; padding: 24px; box-shadow: 0 18px 40px -24px rgba(94, 12, 32, .35); }
+  .feed h2 { font-size: 22px; }
+  .feed .sub { color: var(--muted); font-size: 15px; margin: 2px 0 14px; }
+  .feed ul { list-style: none; margin: 0; padding: 0; }
+  .feed li { display: flex; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--petal); }
+  .feed li:first-child { animation: arrive .6s ease-out; }
+  @keyframes arrive { from { opacity: 0; transform: translateY(-6px); } }
+  .face { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--petal); color: var(--wine); display: grid; place-items: center; font-weight: 700; }
+  .feed p { margin: 0; font-size: 15px; line-height: 1.4; }
+  .feed p b { font-weight: 700; }
+  .feed time { display: block; font-size: 13px; color: var(--muted); }
+
+  /* Compatibility explorer */
+  .explore { background: var(--wine); color: #fff; border-radius: 36px; padding: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-bottom: 64px; }
+  .explore h2 { color: #fff; font-size: clamp(30px, 3.6vw, 44px); line-height: 1.08; }
+  .explore p { color: #f0d3d9; max-width: 38ch; }
+  .groups { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 24px; }
+  .groups button { min-height: 56px; border-radius: 18px; border: 2px solid rgba(255,255,255,.25); background: transparent; color: #fff; font: 600 20px 'Figtree', sans-serif; cursor: pointer; }
+  .groups button[aria-pressed='true'] { background: #fff; color: var(--wine); border-color: #fff; }
+  .result { background: rgba(255,255,255,.08); border-radius: 24px; padding: 28px; }
+  .result h3 { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: #f0d3d9; }
+  .result .big { font-family: 'Young Serif', serif; font-size: 28px; line-height: 1.2; margin: 0 0 20px; }
+  .reach { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+  .reach span { padding: 6px 14px; border-radius: 999px; background: #fff; color: var(--wine); font-weight: 700; }
+  .reach span.off { background: transparent; color: rgba(255,255,255,.4); border: 1px dashed rgba(255,255,255,.3); font-weight: 500; }
+  .result .btn.solid { background: #fff; color: var(--wine); }
+
+  @media (max-width: 860px) {
+    .hero, .explore { grid-template-columns: 1fr; }
+    .explore { padding: 28px 20px; border-radius: 28px; }
+    nav .ghost { display: none; }
+  }
+  @media (max-width: 480px) { .wrap { padding: 0 16px; } .groups button { font-size: 17px; } }
+  @media (prefers-reduced-motion: reduce) { .feed li:first-child { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#">
+      <svg width="26" height="31" viewBox="0 0 100 120" aria-hidden="true"><path d="M50 4C50 4 12 52 12 78a38 38 0 0 0 76 0C88 52 50 4 50 4z" fill="#B3122E"/></svg>
+      BloodLink
+    </a>
+    <nav>
+      <a class="btn ghost" href="#">Log in</a>
+      <a class="btn soft" href="#">Post a request</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>Your neighbours are one tap away from helping.</h1>
+      <p class="lede">When a patient near you needs blood, BloodLink alerts donors who can give it. They say yes, and you get their number.</p>
+      <div class="actions">
+        <a class="btn solid" href="#">Post a blood request</a>
+        <a class="btn soft" href="#">Join as a donor</a>
+      </div>
+    </div>
+
+    <aside class="feed" aria-live="polite">
+      <h2>Saying yes right now</h2>
+      <p class="sub">Donors in Delhi answering requests</p>
+      <ul id="feed"></ul>
+    </aside>
+  </section>
+
+  <section class="explore">
+    <div>
+      <h2>Who can your blood help?</h2>
+      <p>Pick your blood group to see which patients you can donate to. If you don't know your group, any blood bank can test it for free when you donate.</p>
+      <div class="groups" id="groups" role="group" aria-label="Your blood group"></div>
+    </div>
+    <div class="result" id="result" aria-live="polite"></div>
+  </section>
+</main>
+
+<script>
+  const DONORS_FOR = {
+    'O-': ['O-'], 'O+': ['O-', 'O+'], 'A-': ['O-', 'A-'], 'A+': ['O-', 'O+', 'A-', 'A+'],
+    'B-': ['O-', 'B-'], 'B+': ['O-', 'O+', 'B-', 'B+'], 'AB-': ['O-', 'A-', 'B-', 'AB-'],
+    'AB+': ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
+  };
+  const GROUPS = Object.keys(DONORS_FOR);
+  const OPEN = { 'O-': 3, 'O+': 1, 'A-': 0, 'A+': 1, 'B-': 1, 'B+': 1, 'AB-': 1, 'AB+': 0 };
+  let mine = 'O+';
+
+  function renderExplorer() {
+    document.getElementById('groups').innerHTML = GROUPS.map((g) => `<button aria-pressed="${g === mine}" data-g="${g}">${g}</button>`).join('');
+    const reach = GROUPS.filter((p) => DONORS_FOR[p].includes(mine));
+    const waiting = reach.reduce((n, p) => n + OPEN[p], 0);
+    const lead = mine === 'O-' ? 'You can give to every patient.' : reach.length === 1 ? `You can give to ${mine} patients only.` : `You can give to ${reach.length} of 8 blood groups.`;
+    document.getElementById('result').innerHTML = `
+      <h3>${mine} donors</h3>
+      <p class="big">${lead}</p>
+      <div class="reach">${GROUPS.map((g) => `<span class="${reach.includes(g) ? '' : 'off'}">${g}</span>`).join('')}</div>
+      <p>${waiting ? `${waiting} patient${waiting > 1 ? 's' : ''} in Delhi could use your blood today.` : 'Nobody in Delhi needs your group right now.'}</p>
+      <a class="btn solid" href="#">Join as a ${mine} donor</a>`;
+  }
+  document.getElementById('groups').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b) { mine = b.dataset.g; renderExplorer(); }
+  });
+
+  const events = [
+    ['Priya', 'O+', 'Lok Nayak Hospital', '2.1 km', 'just now'],
+    ['Rohan', 'B+', 'Safdarjung Hospital', '3.6 km', '4 min ago'],
+    ['Aarav', 'O-', 'AIIMS', '1.0 km', '11 min ago'],
+    ['Sneha', 'B-', 'Sir Ganga Ram Hospital', '4.0 km', '26 min ago'],
+  ];
+  const incoming = [['Kabir', 'A+', 'Ram Manohar Lohia Hospital', '2.0 km'], ['Meera', 'O+', 'Max, Saket', '6.4 km']];
+  function renderFeed() {
+    document.getElementById('feed').innerHTML = events.slice(0, 4).map(([name, g, hosp, km, t]) => `
+      <li><span class="face">${name[0]}</span>
+        <p><b>${name}</b> (${g}) will donate at ${hosp}, ${km} away<time>${t}</time></p></li>`).join('');
+  }
+  // Demo only: a new "yes" arrives every few seconds.
+  setInterval(() => {
+    const next = incoming.shift();
+    if (!next) return;
+    events.forEach((e, i) => { if (i === 0) e[4] = '1 min ago'; });
+    events.unshift([...next, 'just now']);
+    renderFeed();
+  }, 5000);
+
+  renderExplorer();
+  renderFeed();
+</script>
+</body>
+</html>

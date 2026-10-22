@@ -1,0 +1,19 @@
+{
+  "name": "bloodlink",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Find nearby blood donors in minutes. React + Node.js + MongoDB + Socket.io.",
+  "scripts": {
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n server,client -c red,blue \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:phone": "concurrently -n server,client -c red,blue \"npm run dev --prefix server\" \"npm run dev:phone --prefix client\"",
+    "seed": "npm run seed --prefix server",
+    "seed:india": "npm run seed:india --prefix server",
+    "test": "npm test --prefix server && npm test --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "npm start --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

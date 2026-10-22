@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>BloodLink concept B: Map first</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+<style>
+  /* Concept B: the map is the app. Like a ride-hailing screen: the city fills the viewport,
+     requests sit in a floating sheet, and one large button posts a request from anywhere. */
+  :root {
+    --sheet: #ffffff;
+    --ink: #101828;
+    --muted: #667085;
+    --chip: #f2f4f7;
+    --line: #eaecf0;
+    --blood: #b3122e;
+    --blood-soft: #fdecef;
+    --ok: #12795a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { color: var(--ink); font: 15px/1.45 'Onest', system-ui, sans-serif; overflow: hidden; }
+  :focus-visible { outline: 3px solid #f2a33a; outline-offset: 2px; }
+  #map { position: fixed; inset: 0; z-index: 0; background: #e8eaee; }
+  .leaflet-control-zoom { display: none; }
+  /* Quiet the base map so the red request markers carry the colour */
+  .leaflet-tile-pane { filter: grayscale(0.85) contrast(0.92) brightness(1.06); }
+
+  .top { position: fixed; top: 16px; left: 16px; right: 16px; z-index: 10; display: flex; gap: 10px; align-items: center; pointer-events: none; }
+  .top > * { pointer-events: auto; }
+  .brand { display: flex; align-items: center; gap: 8px; background: var(--sheet); padding: 0 16px 0 10px; height: 48px; border-radius: 999px; font-weight: 800; box-shadow: 0 6px 24px -8px rgba(16,24,40,.25); }
+  .brand svg { width: 28px; height: 28px; }
+  .search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 8px; background: var(--sheet); height: 48px; border-radius: 999px; padding: 0 18px; box-shadow: 0 6px 24px -8px rgba(16,24,40,.25); color: var(--muted); }
+  .search input { border: 0; outline: 0; font: inherit; flex: 1; min-width: 0; color: var(--ink); background: transparent; }
+  .search { min-width: 0; }
+  .avatar { flex: none; margin-left: auto; width: 48px; height: 48px; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 700; box-shadow: 0 6px 24px -8px rgba(16,24,40,.25); }
+
+  /* Sheet: a side panel on desktop, a bottom sheet on phones */
+  .sheet { position: fixed; z-index: 10; left: 16px; top: 80px; bottom: 16px; width: 400px; background: var(--sheet); border-radius: 24px; box-shadow: 0 20px 48px -16px rgba(16,24,40,.35); display: flex; flex-direction: column; overflow: hidden; }
+  .handle { display: none; }
+  .sheet-head { padding: 20px 20px 12px; }
+  .sheet-head h1 { margin: 0; font-size: 22px; letter-spacing: -0.02em; }
+  .sheet-head p { margin: 2px 0 0; color: var(--muted); }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding: 4px 20px 14px; scrollbar-width: none; }
+  .chips button { flex: none; border: 0; background: var(--chip); color: var(--ink); font: 600 14px 'Onest', sans-serif; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+  .chips button[aria-pressed='true'] { background: var(--ink); color: #fff; }
+  .cards { flex: 1; overflow-y: auto; padding: 0 12px 100px; }
+  .card { display: flex; gap: 14px; padding: 14px 10px; border-radius: 16px; cursor: pointer; border: 0; background: none; width: 100%; text-align: left; font: inherit; color: inherit; }
+  .card:hover, .card.active { background: var(--chip); }
+  .drop { flex: none; width: 46px; height: 46px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); background: var(--blood); display: grid; place-items: center; }
+  .drop b { transform: rotate(45deg); color: #fff; font-weight: 800; font-size: 15px; }
+  .card .t { font-weight: 700; }
+  .card .s { color: var(--muted); font-size: 14px; }
+  .meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--chip); }
+  .pill.critical { background: var(--blood); color: #fff; }
+  .pill.urgent { background: #fff1d6; color: #7a4a00; }
+  .pill.ok { background: #e3f4ec; color: var(--ok); }
+
+  .fab { position: fixed; z-index: 11; right: 24px; bottom: 24px; display: inline-flex; align-items: center; gap: 10px; height: 60px; padding: 0 26px 0 20px; border: 0; border-radius: 999px; background: var(--blood); color: #fff; font: 700 17px 'Onest', sans-serif; box-shadow: 0 14px 30px -10px rgba(179,18,46,.7); cursor: pointer; }
+  .fab span { font-size: 26px; line-height: 1; font-weight: 500; }
+
+  .marker { width: 34px; height: 34px; border-radius: 50% 50% 50% 4px; transform: rotate(-45deg); background: var(--blood); border: 3px solid #fff; box-shadow: 0 4px 10px rgba(16,24,40,.35); display: grid; place-items: center; }
+  .marker b { transform: rotate(45deg); color: #fff; font: 800 11px 'Onest', sans-serif; }
+  .marker.critical::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; border: 3px solid var(--blood); animation: ring 1.8s ease-out infinite; }
+  .marker.active { background: var(--ink); }
+  @keyframes ring { from { transform: scale(.6); opacity: .9; } to { transform: scale(1.8); opacity: 0; } }
+  .me { width: 18px; height: 18px; border-radius: 50%; background: #2e6bf2; border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(46,107,242,.2); }
+
+  @media (max-width: 760px) {
+    .brand { padding: 0 12px 0 8px; }
+    .brand .word { display: none; }
+    .sheet { left: 0; right: 0; bottom: 0; top: auto; width: auto; height: 52vh; border-radius: 24px 24px 0 0; }
+    .handle { display: block; width: 40px; height: 5px; border-radius: 3px; background: #d0d5dd; margin: 10px auto 0; }
+    .sheet-head { padding-top: 10px; }
+    .fab { right: 16px; bottom: calc(52vh + 16px); height: 52px; font-size: 15px; padding: 0 20px 0 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .marker.critical::after { animation: none; } }
+</style>
+</head>
+<body>
+<div id="map" role="region" aria-label="Map of open blood requests"></div>
+
+<div class="top">
+  <div class="brand">
+    <svg viewBox="0 0 100 120" aria-hidden="true"><path d="M50 4C50 4 12 52 12 78a38 38 0 0 0 76 0C88 52 50 4 50 4z" fill="#B3122E"/></svg>
+    <span class="word">BloodLink</span>
+  </div>
+  <label class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input placeholder="Search a hospital or area" aria-label="Search a hospital or area" />
+  </label>
+  <div class="avatar" aria-label="Your account">R</div>
+</div>
+
+<aside class="sheet" aria-label="Open requests">
+  <div class="handle" aria-hidden="true"></div>
+  <div class="sheet-head">
+    <h1 id="count">Requests near you</h1>
+    <p>Within 15 km of Connaught Place</p>
+  </div>
+  <div class="chips" id="chips" role="group" aria-label="Filter by blood group"></div>
+  <div class="cards" id="cards"></div>
+</aside>
+
+<button class="fab"><span aria-hidden="true">+</span>Post a request</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script>
+  const requests = [
+    { g: 'O-', hosp: 'AIIMS, Ansari Nagar', units: 2, km: 6.1, needed: 'in 2 h', urgency: 'critical', coming: 1, at: [28.5672, 77.2100] },
+    { g: 'B+', hosp: 'Safdarjung Hospital', units: 1, km: 5.9, needed: 'in 6 h', urgency: 'urgent', coming: 3, at: [28.5681, 77.2063] },
+    { g: 'A+', hosp: 'Ram Manohar Lohia Hospital', units: 1, km: 1.9, needed: 'tomorrow', urgency: 'normal', coming: 2, at: [28.6260, 77.2006] },
+    { g: 'O+', hosp: 'Lok Nayak Hospital', units: 2, km: 2.3, needed: 'in 9 h', urgency: 'urgent', coming: 0, at: [28.6389, 77.2381] },
+    { g: 'B-', hosp: 'Sir Ganga Ram Hospital', units: 1, km: 4.8, needed: 'in 2 days', urgency: 'normal', coming: 0, at: [28.6380, 77.1890] },
+    { g: 'AB-', hosp: 'Max Super Speciality, Saket', units: 2, km: 12.4, needed: 'in 3 h', urgency: 'critical', coming: 0, at: [28.5276, 77.2117] },
+  ];
+  const label = { critical: 'Critical', urgent: 'Urgent', normal: 'Normal' };
+  const groups = ['All', 'O-', 'O+', 'A+', 'B-', 'B+', 'AB-'];
+  let filter = 'All';
+  let active = null;
+
+  const map = L.map('map', { zoomControl: false, attributionControl: true }).setView([28.60, 77.20], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
+  }).addTo(map);
+  L.marker([28.6315, 77.2167], { icon: L.divIcon({ className: '', html: '<div class="me"></div>', iconSize: [18, 18] }) }).addTo(map);
+
+  const markers = requests.map((r, i) => L.marker(r.at, {
+    icon: L.divIcon({ className: '', html: `<div class="marker ${r.urgency}"><b>${r.g}</b></div>`, iconSize: [34, 34], iconAnchor: [17, 34] }),
+  }).addTo(map).on('click', () => select(i)));
+
+  function select(i) {
+    active = i;
+    map.flyTo(requests[i].at, 14, { duration: 0.6 });
+    render();
+    document.querySelector(`[data-i="${i}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  function render() {
+    document.getElementById('chips').innerHTML = groups.map((g) => `<button aria-pressed="${filter === g}" data-g="${g}">${g === 'All' ? 'All groups' : g}</button>`).join('');
+    const list = requests.map((r, i) => ({ ...r, i })).filter((r) => filter === 'All' || r.g === filter);
+    document.getElementById('count').textContent = `${list.length} request${list.length === 1 ? '' : 's'} near you`;
+    document.getElementById('cards').innerHTML = list.map((r) => `
+      <button class="card ${active === r.i ? 'active' : ''}" data-i="${r.i}">
+        <span class="drop"><b>${r.g}</b></span>
+        <span>
+          <span class="t">${r.hosp}</span><br />
+          <span class="s">${r.units} unit${r.units > 1 ? 's' : ''}, ${r.km} km away, needed ${r.needed}</span>
+          <span class="meta"><span class="pill ${r.urgency}">${label[r.urgency]}</span>${r.coming ? `<span class="pill ok">${r.coming} donor${r.coming > 1 ? 's' : ''} coming</span>` : ''}</span>
+        </span>
+      </button>`).join('');
+    markers.forEach((m, i) => {
+      const show = filter === 'All' || requests[i].g === filter;
+      m.setOpacity(show ? 1 : 0.25);
+      m.getElement()?.firstChild.classList.toggle('active', i === active);
+    });
+  }
+
+  document.getElementById('chips').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b) { filter = b.dataset.g; render(); }
+  });
+  document.getElementById('cards').addEventListener('click', (e) => {
+    const c = e.target.closest('.card');
+    if (c) select(Number(c.dataset.i));
+  });
+  render();
+</script>
+</body>
+</html>

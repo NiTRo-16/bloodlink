@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "server"],
+      "port": 5000
+    },
+    {
+      "name": "client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "client"],
+      "port": 5173
+    },
+    {
+      "name": "client-phone",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:phone", "--prefix", "client", "--", "--port", "5174", "--strictPort"],
+      "port": 5174,
+      "url": "https://localhost:5174"
+    },
+    {
+      "name": "production",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"],
+      "port": 5057
+    }
+  ]
+}

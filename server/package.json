@@ -1,0 +1,33 @@
+{
+  "name": "bloodlink-server",
+  "version": "1.0.0",
+  "description": "BloodLink API: donors, blood requests, geo matching and live alerts",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "seed": "node scripts/seed.js",
+    "seed:india": "node scripts/seed-india.js",
+    "vapid": "web-push generate-vapid-keys",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "socket.io": "^4.7.5",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

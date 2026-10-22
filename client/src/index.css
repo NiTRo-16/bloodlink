@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-mist font-sans font-medium text-ink antialiased;
+    -webkit-tap-highlight-color: transparent; /* the buttons show their own pressed state */
+  }
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  label {
+    touch-action: manipulation; /* no double-tap-zoom delay on taps */
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display font-normal tracking-tight text-ink;
+  }
+  /* Blue so focus never blends into the red and black of the interface */
+  :focus-visible {
+    outline: 3px solid #2b59ff;
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* Buttons press into their shadow when clicked, so the click is felt */
+  .btn-primary,
+  .btn-secondary,
+  .btn-success {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border-3 border-ink px-5 py-2.5 text-sm font-extrabold shadow-cta transition-transform hover:-translate-x-px hover:-translate-y-px active:translate-x-1 active:translate-y-1 active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-x-0 disabled:hover:translate-y-0;
+  }
+  .btn-primary {
+    @apply bg-blood text-white;
+  }
+  .btn-secondary {
+    @apply bg-white text-ink;
+  }
+  .btn-success {
+    @apply bg-sage-soft text-ink;
+  }
+  .panel {
+    @apply rounded-2xl border-3 border-ink bg-white p-5 shadow-card sm:p-6;
+  }
+  /* Related rows share one box, separated by black rules */
+  .list-group {
+    @apply divide-y-2 divide-ink overflow-hidden rounded-2xl border-3 border-ink bg-white shadow-card;
+  }
+  .list-row {
+    @apply flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-amber-soft sm:px-5;
+  }
+  .field-label {
+    @apply mb-1.5 block text-sm font-extrabold text-ink;
+  }
+  .input {
+    /* text-base (16px) stops iOS Safari zooming in when a field is focused */
+    @apply w-full rounded-xl border-3 border-ink bg-white px-3.5 py-2.5 text-base font-medium text-ink placeholder:text-slate/60 focus:shadow-sm focus:outline-none;
+  }
+  /* A selectable tile: blood group and urgency choices */
+  .choice {
+    @apply rounded-xl border-3 border-ink bg-white transition-transform hover:-translate-y-px;
+  }
+  .choice[aria-pressed='true'] {
+    @apply bg-amber shadow-sm;
+  }
+  /* The square blood-group block used on request cards */
+  .group-block {
+    @apply grid shrink-0 place-items-center rounded-xl border-3 border-ink bg-blood font-display text-white;
+  }
+}
+
+/* Map markers: a tilted square pin, coloured by urgency */
+.map-pin {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: 3px solid #000;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 3px 3px 0 #000;
+  display: grid;
+  place-items: center;
+  background: #e5172f;
+  color: #fff;
+}
+.map-pin b {
+  transform: rotate(45deg);
+  font: 400 12px 'Archivo Black', sans-serif;
+}
+.map-pin.urgent {
+  background: #ffd23f;
+  color: #000;
+}
+.map-pin.normal {
+  background: #fff;
+  color: #000;
+}
+.pulse-ring {
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  border: 3px solid #e5172f;
+  animation: pulse 1.8s ease-out infinite;
+}
+.pin-marker {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e5172f;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+}
+
+/* The small dot that says "this updates by itself" */
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e5172f;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #e5172f;
+  animation: live 1.8s ease-out infinite;
+}
+@keyframes live {
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Live ticker of the newest requests. The list is rendered twice so the loop is seamless. */
+.ticker-track {
+  display: inline-flex;
+  animation: ticker 40s linear infinite;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+@keyframes ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* A new alert slides in so the donor notices what changed */
+.alert-in {
+  animation: alert-in 0.45s ease-out;
+}
+@keyframes alert-in {
+  from {
+    transform: translateY(-8px);
+    background: #fff3c4;
+  }
+}
+
+.toast-in {
+  animation: toast-in 0.25s ease-out;
+}
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-ring,
+  .live-dot::after,
+  .alert-in,
+  .toast-in,
+  .ticker-track {
+    animation: none;
+  }
+}
+
+.leaflet-container {
+  font-family: 'Archivo', system-ui, sans-serif;
+}
+/* Grey base map, so the coloured pins carry the information */
+.leaflet-tile-pane {
+  filter: grayscale(1) contrast(1.05) brightness(1.08);
+}
+.leaflet-bar {
+  border: 3px solid #000 !important;
+  border-radius: 10px !important;
+  box-shadow: 3px 3px 0 #000;
+  overflow: hidden;
+}
+.leaflet-popup-content-wrapper {
+  border: 3px solid #000;
+  border-radius: 14px;
+  box-shadow: 5px 5px 0 #000;
+}
+.leaflet-popup-tip {
+  border: 3px solid #000;
+}

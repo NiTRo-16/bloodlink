@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BloodLink neo-brutalist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
+<style>
+  /* Neo-brutalist BloodLink: hard black outlines, solid offset shadows, flat colour blocks.
+     Colour is information, not decoration: red = blood/need, yellow = urgent, mint = donors coming,
+     blue = steps and info. */
+  :root {
+    --paper: #fff1ec;
+    --ink: #000;
+    --red: #e5172f;
+    --yellow: #ffd23f;
+    --mint: #7be0b0;
+    --sky: #9cc8ff;
+    --white: #fff;
+    --bw: 3px;
+    --shadow: 6px 6px 0 var(--ink);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 500 17px/1.45 'Archivo', system-ui, sans-serif; }
+  h1, h2, h3, .display { font-family: 'Archivo Black', 'Archivo', sans-serif; font-weight: 400; margin: 0; letter-spacing: -0.02em; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 40px; }
+  .box { background: var(--white); border: var(--bw) solid var(--ink); box-shadow: var(--shadow); border-radius: 14px; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 54px; padding: 0 24px; border: var(--bw) solid var(--ink); border-radius: 12px; box-shadow: 4px 4px 0 var(--ink); font: 800 17px 'Archivo', sans-serif; color: var(--ink); background: var(--white); text-decoration: none; }
+  .btn.red { background: var(--red); color: var(--white); }
+  .btn.small { min-height: 44px; padding: 0 16px; font-size: 15px; box-shadow: 3px 3px 0 var(--ink); }
+
+  /* Live ticker: the newest requests scroll across the top */
+  .ticker { background: var(--ink); color: var(--white); border-bottom: var(--bw) solid var(--ink); overflow: hidden; white-space: nowrap; font-weight: 700; font-size: 15px; }
+  .ticker .track { display: inline-flex; gap: 40px; padding: 10px 0 10px 40px; }
+  .ticker b { color: var(--yellow); }
+  .ticker span::before { content: ''; display: inline-block; width: 9px; height: 9px; background: var(--red); border-radius: 50%; margin-right: 10px; vertical-align: 1px; }
+
+  nav { display: flex; align-items: center; gap: 14px; padding: 22px 0; }
+  .logo { display: flex; align-items: center; gap: 12px; font: 400 26px 'Archivo Black', sans-serif; color: var(--ink); text-decoration: none; margin-right: auto; }
+  .logo i { width: 46px; height: 46px; display: grid; place-items: center; background: var(--red); border: var(--bw) solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); }
+  nav a.link { font-weight: 700; color: var(--ink); text-decoration: none; padding: 10px 14px; }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: 1fr 1.05fr; gap: 40px; padding: 26px 0 56px; align-items: stretch; }
+  .hero-copy { display: flex; flex-direction: column; justify-content: center; }
+  .count { display: inline-flex; align-items: baseline; gap: 14px; align-self: flex-start; background: var(--yellow); border: var(--bw) solid var(--ink); box-shadow: var(--shadow); border-radius: 14px; padding: 6px 20px 10px; transform: rotate(-2deg); margin-bottom: 26px; }
+  .count .display { font-size: 92px; line-height: 1; }
+  .count span { font-weight: 800; font-size: 20px; line-height: 1.15; }
+  h1 { font-size: 76px; line-height: 0.98; max-width: 11ch; }
+  .lede { font-size: 21px; max-width: 32ch; margin: 22px 0 30px; }
+  .actions { display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .mapcard { overflow: hidden; display: flex; flex-direction: column; min-height: 560px; }
+  .mapbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: var(--bw) solid var(--ink); background: var(--sky); font-weight: 800; }
+  .mapbar .live { display: inline-flex; align-items: center; gap: 8px; background: var(--white); border: 2px solid var(--ink); border-radius: 999px; padding: 3px 12px; font-size: 14px; }
+  .mapbar .live::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
+  #map { flex: 1; background: #ddd; }
+  .leaflet-tile-pane { filter: grayscale(1) contrast(1.05) brightness(1.08); }
+  .leaflet-control-zoom { border: var(--bw) solid var(--ink) !important; box-shadow: 3px 3px 0 var(--ink); border-radius: 10px !important; overflow: hidden; }
+  .pin { width: 40px; height: 40px; background: var(--red); border: var(--bw) solid var(--ink); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 3px 3px 0 var(--ink); display: grid; place-items: center; }
+  .pin b { transform: rotate(45deg); color: var(--white); font: 400 12px 'Archivo Black', sans-serif; }
+  .pin.urgent { background: var(--yellow); }
+  .pin.urgent b { color: var(--ink); }
+
+  /* Open requests */
+  .section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px; }
+  .section-head h2 { font-size: 44px; }
+  .section-head p { margin: 0; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .req { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  /* Fixed height keeps every card's facts row on the same line, whatever the hospital name's length */
+  .req-top { display: flex; gap: 12px; align-items: flex-start; min-height: 84px; }
+  .group { flex: none; width: 64px; height: 64px; display: grid; place-items: center; background: var(--red); color: var(--white); border: var(--bw) solid var(--ink); border-radius: 12px; font: 400 23px 'Archivo Black', sans-serif; }
+  .req h3 { font-size: 18px; line-height: 1.15; }
+  .req .city { font-weight: 600; font-size: 14px; margin-top: 4px; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
+  .facts div { padding: 8px 10px; font-size: 14px; }
+  .facts div + div { border-left: 2px solid var(--ink); }
+  .facts b { display: block; font: 400 18px 'Archivo Black', sans-serif; }
+  .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { border: 2px solid var(--ink); border-radius: 999px; padding: 2px 12px; font-weight: 800; font-size: 14px; background: var(--white); }
+  .tag.critical { background: var(--red); color: var(--white); }
+  .tag.urgent { background: var(--yellow); }
+  .tag.coming { background: var(--mint); }
+  .req .btn { justify-content: center; margin-top: auto; }
+
+  /* How it works: a real sequence, so it is numbered */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin: 64px 0 40px; }
+  .step { padding: 26px; background: var(--sky); }
+  .step:nth-child(2) { background: var(--yellow); }
+  .step:nth-child(3) { background: var(--mint); }
+  .step .n { width: 52px; height: 52px; display: grid; place-items: center; background: var(--white); border: var(--bw) solid var(--ink); border-radius: 50%; font: 400 22px 'Archivo Black', sans-serif; margin-bottom: 18px; }
+  .step h3 { font-size: 26px; margin-bottom: 8px; }
+  .step p { margin: 0; font-size: 17px; }
+
+  footer { border-top: var(--bw) solid var(--ink); padding: 22px 0 30px; font-weight: 600; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+  <div class="ticker" aria-label="Latest requests">
+    <div class="track">
+      <span><b>B+</b> needed at Safdarjung Hospital, Delhi</span>
+      <span><b>O−</b> needed at Osmania General Hospital, Hyderabad</span>
+      <span>Priya (O+) is coming to Lok Nayak Hospital</span>
+      <span><b>A+</b> needed at KEM Hospital, Parel, Mumbai</span>
+      <span><b>AB−</b> needed at SSKM Hospital, Kolkata</span>
+      <span>Karthik (B+) is coming to Victoria Hospital</span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <nav>
+      <a class="logo" href="#"><i><svg width="22" height="27" viewBox="0 0 100 120"><path d="M50 4C50 4 12 52 12 78a38 38 0 0 0 76 0C88 52 50 4 50 4z" fill="#fff" stroke="#000" stroke-width="8"/></svg></i>BloodLink</a>
+      <a class="link" href="#">How it works</a>
+      <a class="link" href="#">Log in</a>
+      <a class="btn small" href="#">Become a donor</a>
+      <a class="btn small red" href="#">Post a request</a>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="count"><span class="display">27</span><span>patients are<br />waiting now</span></div>
+        <h1>Someone nearby needs your blood.</h1>
+        <p class="lede">Post a request and every compatible donor near the hospital gets an alert. Donors say yes in one tap.</p>
+        <div class="actions">
+          <a class="btn red" href="#">Post a blood request</a>
+          <a class="btn" href="#">I want to donate</a>
+        </div>
+      </div>
+      <div class="box mapcard">
+        <div class="mapbar">Open requests across India <span class="live">Live</span></div>
+        <div id="map"></div>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <h2>Needed right now</h2>
+      <p>Showing 4 of 27, newest first</p>
+    </div>
+    <div class="grid">
+      <article class="box req">
+        <div class="req-top"><div class="group">O−</div><div><h3>Osmania General Hospital</h3><div class="city">Hyderabad, 3.1 km away</div></div></div>
+        <div class="facts"><div><b>2 units</b>for Lakshmi R.</div><div><b>in 4 h</b>needed by</div></div>
+        <div class="tags"><span class="tag critical">Critical</span><span class="tag coming">1 coming</span></div>
+        <a class="btn red small" href="#">I can donate</a>
+      </article>
+      <article class="box req">
+        <div class="req-top"><div class="group">B+</div><div><h3>Safdarjung Hospital</h3><div class="city">Delhi, 3.6 km away</div></div></div>
+        <div class="facts"><div><b>2 units</b>for Sunita D.</div><div><b>in 5 h</b>needed by</div></div>
+        <div class="tags"><span class="tag critical">Critical</span><span class="tag coming">3 coming</span></div>
+        <a class="btn red small" href="#">I can donate</a>
+      </article>
+      <article class="box req">
+        <div class="req-top"><div class="group">A+</div><div><h3>KEM Hospital, Parel</h3><div class="city">Mumbai, 5.2 km away</div></div></div>
+        <div class="facts"><div><b>1 unit</b>for Omkar P.</div><div><b>in 18 h</b>needed by</div></div>
+        <div class="tags"><span class="tag urgent">Urgent</span></div>
+        <a class="btn red small" href="#">I can donate</a>
+      </article>
+      <article class="box req">
+        <div class="req-top"><div class="group">AB−</div><div><h3>SSKM Hospital</h3><div class="city">Kolkata, 2.4 km away</div></div></div>
+        <div class="facts"><div><b>3 units</b>for Arpita S.</div><div><b>in 22 h</b>needed by</div></div>
+        <div class="tags"><span class="tag urgent">Urgent</span><span class="tag">Rare group</span></div>
+        <a class="btn red small" href="#">I can donate</a>
+      </article>
+    </div>
+
+    <section class="steps">
+      <div class="box step"><div class="n">1</div><h3>Post a request</h3><p>Blood group, units, hospital and how soon. It takes a minute.</p></div>
+      <div class="box step"><div class="n">2</div><h3>Donors get alerted</h3><p>Only compatible, eligible donors within your radius hear about it.</p></div>
+      <div class="box step"><div class="n">3</div><h3>Someone says yes</h3><p>You get their name and number. Your number stays private until then.</p></div>
+    </section>
+
+    <footer><span>BloodLink connects donors and families. The blood bank makes the final medical decision.</span><span>Emergency? Call 108</span></footer>
+  </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script>
+  const map = L.map('map', { attributionControl: true, zoomSnap: 0.25 }).setView([22.4, 79.6], 4.75);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(map);
+  // [group, lat, lng, urgency] — one marker per city with open requests in the mock data
+  [
+    ['B+', 28.57, 77.21, 'critical'], ['O−', 17.37, 78.48, 'critical'], ['A+', 19.0, 72.84, 'urgent'],
+    ['AB−', 22.54, 88.34, 'urgent'], ['O+', 12.96, 77.57, 'urgent'], ['B−', 13.08, 80.28, 'critical'],
+    ['A+', 18.53, 73.87, 'urgent'], ['O+', 26.9, 75.81, 'urgent'], ['B+', 26.87, 80.92, 'critical'],
+    ['O−', 23.05, 72.6, 'urgent'],
+  ].forEach(([g, lat, lng, u]) =>
+    L.marker([lat, lng], {
+      icon: L.divIcon({ className: '', html: `<div class="pin ${u}"><b>${g}</b></div>`, iconSize: [40, 40], iconAnchor: [20, 40] }),
+    }).addTo(map)
+  );
+</script>
+</body>
+</html>

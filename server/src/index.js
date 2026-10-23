@@ -12,6 +12,7 @@ import meRoutes from './routes/me.js';
 import requestRoutes from './routes/requests.js';
 import pushRoutes from './routes/push.js';
 import { initRealtime } from './services/notify.js';
+import { startExpiryJob } from './services/expiry.js';
 import { proxyHops, securityHeaders } from './middleware/security.js';
 import { apiLimit } from './middleware/rateLimits.js';
 
@@ -72,6 +73,7 @@ mongoose
     // Make sure the geo indexes exist before the first $near query.
     await Promise.all(Object.values(mongoose.models).map((m) => m.syncIndexes()));
     server.listen(PORT, () => console.log(`BloodLink API running on http://localhost:${PORT}`));
+    startExpiryJob();
   })
   .catch((err) => {
     console.error('Could not connect to MongoDB:', err.message);

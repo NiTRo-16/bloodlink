@@ -40,5 +40,8 @@ export const otpLimit = limit({ minutes: 15, max: 30, message: 'Too many code re
 /** Posting blood requests, per account: alerts reach many donors, so this guards against spam. */
 export const postRequestLimit = limit({ minutes: 60, max: 5, by: byUser, message: "You've posted 5 requests in the last hour. Wait a while before posting another." });
 
+/** Confirming account deletion with a password, per account (a stolen login can't be used to guess it). */
+export const deleteAccountLimit = limit({ minutes: 15, max: 5, by: byUser, message: 'Too many tries. Wait 15 minutes before trying again.' });
+
 /** Accepting or declining requests, per account. */
 export const respondLimit = limit({ minutes: 60, max: 60, by: byUser, message: 'Too many responses. Try again later.' });

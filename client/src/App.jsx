@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar.jsx';
 import BottomNav from './components/BottomNav.jsx';
 import RequireAuth from './components/RequireAuth.jsx';
@@ -9,6 +9,7 @@ import Register from './pages/Register.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import NewRequest from './pages/NewRequest.jsx';
 import RequestDetail from './pages/RequestDetail.jsx';
+import { Privacy, Terms } from './pages/Legal.jsx';
 
 // Each page opens at the top, as it would in a native app, instead of keeping the last page's scroll position.
 function ScrollToTop() {
@@ -33,13 +34,19 @@ export default function App() {
           <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/requests/new" element={<RequireAuth><NewRequest /></RequireAuth>} />
           <Route path="/requests/:id" element={<RequireAuth><RequestDetail /></RequireAuth>} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       <footer className="mx-auto w-full max-w-6xl px-4">
         <div className="flex flex-wrap justify-between gap-2 border-t-3 border-ink py-5 text-sm font-semibold">
           <span>BloodLink connects donors and families. The blood bank makes the final medical decision.</span>
-          <a href="tel:108" className="font-extrabold hover:underline">Emergency? Call 108</a>
+          <span className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link to="/privacy" className="hover:underline">Privacy</Link>
+            <Link to="/terms" className="hover:underline">Terms</Link>
+            <a href="tel:108" className="font-extrabold hover:underline">Emergency? Call 108</a>
+          </span>
         </div>
       </footer>
       <BottomNav />

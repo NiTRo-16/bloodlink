@@ -16,7 +16,8 @@ const bloodRequestSchema = new mongoose.Schema(
     neededBy: { type: Date, required: true },
     radiusKm: { type: Number, default: 10, min: 1, max: 100 },
 
-    status: { type: String, enum: ['open', 'fulfilled', 'cancelled'], default: 'open' },
+    // 'expired' is set automatically 12 hours after neededBy if nobody closed it (services/expiry.js)
+    status: { type: String, enum: ['open', 'fulfilled', 'cancelled', 'expired'], default: 'open' },
     closedAt: { type: Date, default: null },
 
     // Donors who were alerted when the request was posted

@@ -54,6 +54,11 @@ router.post(
       data.location = toPoint(lat, lng);
     }
 
+    if (req.body.acceptTerms !== true) {
+      throw new HttpError(400, 'Confirm you are 18 or older and agree to the terms and privacy policy');
+    }
+    data.termsAcceptedAt = new Date();
+
     // Checked last, so a mistake elsewhere in the form doesn't use up the code.
     if (isOtpEnabled()) {
       if (!req.body.code) throw new HttpError(400, 'Confirm your phone number with the code we sent');

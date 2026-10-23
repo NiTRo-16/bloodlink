@@ -58,7 +58,7 @@ const it = (name, fn) => test(name, async (t) => (mongoAvailable ? fn(t) : t.ski
 
 async function signUp(phone, name) {
   // Codes are off in this suite, so sign-up doesn't need one.
-  const res = await call('POST', '/auth/register', { body: { name, phone, password: 'password123', isDonor: false } });
+  const res = await call('POST', '/auth/register', { body: { name, phone, password: 'password123', isDonor: false, acceptTerms: true } });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   return res.body.token;
 }

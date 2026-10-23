@@ -94,7 +94,7 @@ let requestId;
 async function register(key, data) {
   const sent = await call('POST', '/auth/register/code', { body: { phone: data.phone } });
   assert.equal(sent.status, 200, JSON.stringify(sent.body));
-  const res = await call('POST', '/auth/register', { body: { password: 'password123', ...data, code: sent.body.devCode } });
+  const res = await call('POST', '/auth/register', { body: { password: 'password123', acceptTerms: true, ...data, code: sent.body.devCode } });
   assert.equal(res.status, 201, JSON.stringify(res.body));
   users[key] = { ...res.body.user, token: res.body.token };
   return users[key];
@@ -118,10 +118,19 @@ it('registers donors and a requester', async () => {
   await register('family', { name: 'Sunita', phone: '9100000009', gender: 'female', isDonor: false });
   assert.equal(users.family.isDonor, false);
   assert.equal(users.family.phoneVerified, true);
+  assert.ok(new Date(users.family.termsAcceptedAt) <= new Date(), 'records when they agreed');
+});
+
+it('requires being 18+ and agreeing to the terms', async () => {
+  const res = await call('POST', '/auth/register', {
+    body: { name: 'X', phone: '9100000030', password: 'password123', isDonor: false, acceptTerms: 'yes' },
+  });
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /18 or older and agree to the terms/);
 });
 
 it('will not create an account without confirming the number', async () => {
-  const body = { name: 'X', phone: '9100000020', password: 'password123', isDonor: false };
+  const body = { name: 'X', phone: '9100000020', password: 'password123', isDonor: false, acceptTerms: true };
   const noCode = await call('POST', '/auth/register', { body });
   assert.equal(noCode.status, 400);
   assert.match(noCode.body.error, /Confirm your phone number/);
@@ -153,7 +162,7 @@ it('keeps sign-up and login codes apart', async () => {
   // ...and a code sent to someone else's number can't register yours.
   const other = await call('POST', '/auth/register/code', { body: { phone: '9100000022' } });
   const stolen = await call('POST', '/auth/register', {
-    body: { name: 'X', phone: '9100000023', password: 'password123', code: other.body.devCode },
+    body: { name: 'X', phone: '9100000023', password: 'password123', acceptTerms: true, code: other.body.devCode },
   });
   assert.equal(stolen.status, 400);
 });
@@ -292,6 +301,7 @@ it('hides the family phone number until a donor accepts', async () => {
   assert.equal(view.canRespond, true);
   assert.equal(view.request.contactPhone, null);
   assert.equal(view.request.requesterName, undefined);
+  assert.equal(view.request.patientName, 'Ramesh K.', 'only first name and initial before accepting');
 });
 
 it('stops donors who cannot give from responding', async () => {
@@ -318,6 +328,7 @@ it('shares phone numbers both ways once a donor accepts', async () => {
   const view = (await call('GET', `/requests/${requestId}`, { token: users.bPos.token })).body;
   assert.equal(view.request.contactPhone, '9100000009');
   assert.equal(view.request.requesterName, 'Sunita');
+  assert.equal(view.request.patientName, 'Ramesh Kumar');
 });
 
 it("keeps a declining donor's number private", async () => {
@@ -403,7 +414,10 @@ it('a donor who just gave stops getting alerts', async () => {
   });
   assert.equal(res.body.notifiedCount, 1); // only the O- donor now
   assert.deepEqual((await call('GET', '/me/alerts', { token: users.bPos.token })).body, []);
+  secondRequestId = res.body.request._id;
 });
+
+let secondRequestId;
 
 // ---------- Logging in with a code ----------
 
@@ -449,6 +463,42 @@ it('cancels a code after five wrong tries', async () => {
   assert.match(last.body.error, /Too many wrong tries/);
   const right = await call('POST', '/auth/otp/verify', { body: { phone: '9100000004', code: sent.body.devCode } });
   assert.equal(right.status, 400);
+});
+
+// ---------- Deleting an account ----------
+
+it('needs the right password to delete an account', async () => {
+  const res = await call('DELETE', '/me', { token: users.oNeg.token, body: { password: 'nope' } });
+  assert.equal(res.status, 401);
+  assert.equal((await call('GET', '/me', { token: users.oNeg.token })).status, 200);
+});
+
+it("deleting a donor's account removes their answers from other people's requests", async () => {
+  await call('POST', `/requests/${secondRequestId}/respond`, { token: users.oNeg.token, body: { status: 'accepted' } });
+  const before = (await call('GET', `/requests/${secondRequestId}`, { token: users.family.token })).body;
+  assert.equal(before.responses.length, 1);
+
+  const res = await call('DELETE', '/me', { token: users.oNeg.token, body: { password: 'password123' } });
+  assert.deepEqual(res.body, { deleted: true });
+
+  const after = (await call('GET', `/requests/${secondRequestId}`, { token: users.family.token })).body;
+  assert.equal(after.responses.length, 0);
+  assert.equal(after.request.notifiedCount, 0, 'no longer listed as alerted');
+  assert.equal((await call('GET', '/requests/open')).body.find((r) => r._id === secondRequestId).acceptedCount, 0);
+  // Their login no longer works, and neither does the token they had.
+  assert.equal((await call('POST', '/auth/login', { body: { phone: '9100000001', password: 'password123' } })).status, 401);
+  assert.equal((await call('GET', '/me', { token: users.oNeg.token })).status, 401);
+});
+
+it("deleting a requester's account removes their requests, open or closed", async () => {
+  const res = await call('DELETE', '/me', { token: users.family.token, body: { password: 'password123' } });
+  assert.equal(res.status, 200);
+  const open = (await call('GET', '/requests/open')).body;
+  assert.equal(open.some((r) => r._id === secondRequestId), false);
+  assert.equal((await call('GET', `/requests/${requestId}`, { token: users.bPos.token })).status, 404);
+  // Rohan's donation record for that request goes with it.
+  const history = (await call('GET', '/me/history', { token: users.bPos.token })).body;
+  assert.equal(history.some((h) => h.request._id === requestId), false);
 });
 
 // ---------- Robustness ----------

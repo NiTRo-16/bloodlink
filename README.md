@@ -18,6 +18,8 @@ Built entirely in JavaScript: React, Node.js, Express, MongoDB, Socket.io and th
 - **Privacy:** phone numbers are revealed only after a donor accepts; donor locations are never shown, only distances
 - **Live public map** of open requests that updates without refreshing
 - **Close the loop:** the requester marks who donated, which records the donation and pauses that donor until they're eligible again
+- **No stale emergencies:** requests nobody closed expire automatically 12 hours after their needed-by time
+- **Your data, your call:** anyone can delete their account and everything tied to it from the dashboard; the privacy policy and terms are at `/privacy` and `/terms`
 - **Installable PWA** with a service worker
 
 ## Tech stack
@@ -126,6 +128,7 @@ After `npm run seed`, eight demo donors exist around your chosen point (phones `
 | POST | `/api/auth/otp/verify` | Anyone | Log in with the code, returns a token |
 | GET | `/api/me` | User | Profile and donation eligibility |
 | PATCH | `/api/me` | User | Availability, location, blood group, become a donor |
+| DELETE | `/api/me` | User | Delete the account and everything tied to it (confirm with `password`) |
 | GET | `/api/me/alerts` | Donor | Open requests this donor can help with, with distance |
 | GET | `/api/me/requests` | User | Requests I posted |
 | GET | `/api/me/history` | Donor | My responses and donations |
@@ -224,6 +227,7 @@ To try the production setup locally: `npm run build`, then `npm start` (the app 
 - **Behind a proxy**, rate limits need to see each visitor's real address. This is detected automatically on Render. On other hosts, set `TRUST_PROXY=1` (or the number of proxies).
 - **Never seed the live database.** `npm run seed` and `npm run seed:india` refuse to run unless `MONGO_URI` points at this machine.
 - **Turn on backups** in MongoDB Atlas.
+- **Finish the legal pages.** `client/src/pages/Legal.jsx` has draft privacy and terms pages written to match what the app does. Fill in the `[bracketed]` placeholders (organisation, contact email, city, date) and have a qualified lawyer review them.
 
 ### Built-in protection
 
@@ -247,7 +251,6 @@ To try the production setup locally: `npm run build`, then `npm start` (the app 
 - Donor badges and donation certificates
 - Hindi interface
 - Admin panel for reported requests
-- Expire requests automatically after the needed-by time
 
 ## Medical note
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../lib/api.js';
 import { getSocket } from '../lib/socket.js';
 import { enableNotifications, notificationsSupported, showLocalNotification } from '../lib/push.js';
@@ -22,8 +22,65 @@ export default function Dashboard() {
       <div className="space-y-6">
         <MyRequests />
         {user.isDonor && <History />}
+        <DeleteAccount />
       </div>
     </div>
+  );
+}
+
+function DeleteAccount() {
+  const { signOut } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function remove(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await api('/me', { method: 'DELETE', body: { password } });
+      signOut();
+      navigate('/', { replace: true });
+      toast('Your account and its data were deleted.', 'success');
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="text-sm font-semibold text-slate underline hover:text-ink">
+        Delete my account
+      </button>
+    );
+  }
+  return (
+    <form onSubmit={remove} className="panel space-y-4 border-blood">
+      <div>
+        <h2 className="text-xl">Delete your account?</h2>
+        <p className="mt-1 text-sm">
+          This permanently removes your profile, your donation history, your answers to requests, and any requests you
+          posted. Open requests are closed for the donors who were alerted. It can't be undone.
+        </p>
+      </div>
+      <label className="block">
+        <span className="field-label">Enter your password to confirm</span>
+        <input className="input" type="password" autoComplete="current-password" required value={password}
+          onChange={(e) => setPassword(e.target.value)} />
+      </label>
+      {error && <p className="text-sm font-medium text-blood">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button className="btn-primary" disabled={busy || !password}>{busy ? 'Deleting…' : 'Delete account permanently'}</button>
+        <button type="button" className="btn-secondary" onClick={() => { setOpen(false); setPassword(''); setError(''); }}>
+          Keep my account
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -264,9 +321,12 @@ function MyRequests() {
   useEffect(() => {
     api('/me/requests').then(setRequests).catch(() => setRequests([]));
     const socket = getSocket();
+    // 'withdrawn' means a donor who had accepted deleted their account.
+    const change = { accepted: 1, withdrawn: -1 };
     const onResponse = ({ requestId, status }) => {
+      if (!change[status]) return;
       setRequests((list) =>
-        list?.map((r) => (r._id === requestId && status === 'accepted' ? { ...r, acceptedCount: r.acceptedCount + 1 } : r))
+        list?.map((r) => (r._id === requestId ? { ...r, acceptedCount: Math.max(0, r.acceptedCount + change[status]) } : r))
       );
     };
     socket.on('response:updated', onResponse);

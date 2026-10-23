@@ -109,7 +109,7 @@ it('signs up with the code from the text, which is never sent to the browser', a
   assert.match(sms.otp, /^\d{6}$/);
 
   const res = await call('POST', '/auth/register', {
-    name: 'Priya', phone: '9200000001', password: 'password123', isDonor: false, code: sms.otp,
+    name: 'Priya', phone: '9200000001', password: 'password123', isDonor: false, acceptTerms: true, code: sms.otp,
   });
   assert.equal(res.status, 201);
   assert.equal(res.body.user.phoneVerified, true);

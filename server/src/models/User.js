@@ -26,6 +26,8 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, required: true, unique: true, trim: true },
     // True once they've proved they own the number with a one-time code (at sign-up or a code login)
     phoneVerified: { type: Boolean, default: false },
+    // When they confirmed they're 18+ and agreed to the terms and privacy policy (consent record)
+    termsAcceptedAt: { type: Date, default: null },
     passwordHash: { type: String, required: true },
     gender: { type: String, enum: ['male', 'female', 'other'], default: 'other' },
 

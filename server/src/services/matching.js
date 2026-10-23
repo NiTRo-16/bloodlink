@@ -66,12 +66,18 @@ export async function findAlertsForDonor(donor) {
   return requests.map((r) => toDonorView(r, statusById.get(String(r._id)) ?? null, r.distanceMeters / 1000));
 }
 
-/** What a matched donor sees. The contact phone appears only after they accept. */
+/** "Sunita Devi" → "Sunita D." */
+export function shortName(name) {
+  const [first, ...rest] = String(name ?? '').trim().split(/\s+/);
+  return rest.length ? `${first} ${rest.at(-1)[0].toUpperCase()}.` : first;
+}
+
+/** What a donor sees. The patient's full name and the contact phone appear only after they accept. */
 export function toDonorView(r, myResponse, distanceKm) {
   const accepted = myResponse === 'accepted' || myResponse === 'donated';
   return {
     _id: r._id,
-    patientName: r.patientName,
+    patientName: accepted ? r.patientName : shortName(r.patientName),
     bloodGroup: r.bloodGroup,
     units: r.units,
     hospital: r.hospital,

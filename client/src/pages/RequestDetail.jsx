@@ -60,7 +60,7 @@ export default function RequestDetail() {
             <UrgencyTag urgency={r.urgency} />
             {r.status !== 'open' && (
               <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs font-semibold text-white">
-                {r.status === 'fulfilled' ? 'Fulfilled' : 'Cancelled'}
+                {{ fulfilled: 'Fulfilled', cancelled: 'Cancelled', expired: 'Expired' }[r.status]}
               </span>
             )}
           </div>
@@ -126,6 +126,12 @@ function OwnerView({ data, onChange }) {
       <h2 className="text-xl">
         {accepted.length === 0 ? 'Waiting for donors' : `${accepted.length} donor${accepted.length > 1 ? 's' : ''} can help`}
       </h2>
+      {request.status === 'expired' && (
+        <p className="panel">
+          This request closed automatically 12 hours after the time it was needed by. If you still need blood,{' '}
+          <Link to="/requests/new" className="font-extrabold text-blood underline">post a new request</Link>.
+        </p>
+      )}
       {accepted.length === 0 && request.status === 'open' && (
         <p className="panel text-slate">
           {request.notifiedCount > 0

@@ -1,10 +1,14 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { requireAuth } from '../middleware/auth.js';
 import BloodRequest from '../models/BloodRequest.js';
 import DonorResponse from '../models/DonorResponse.js';
+import OtpCode from '../models/OtpCode.js';
 import { asyncHandler, HttpError, toPoint } from '../utils/http.js';
 import { isEligible, isValidBloodGroup, nextEligibleDate } from '../utils/compatibility.js';
 import { findAlertsForDonor } from '../services/matching.js';
+import { broadcast, emitToUser } from '../services/notify.js';
+import { deleteAccountLimit } from '../middleware/rateLimits.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -90,6 +94,45 @@ router.get(
       .populate('request', 'bloodGroup units hospital status neededBy urgency')
       .lean();
     res.json(responses.filter((r) => r.request));
+  })
+);
+
+// DELETE /api/me  { password }  (delete the account and everything tied to it)
+router.delete(
+  '/',
+  deleteAccountLimit,
+  asyncHandler(async (req, res) => {
+    const user = req.user;
+    if (!(await bcrypt.compare(String(req.body?.password ?? ''), user.passwordHash))) {
+      throw new HttpError(401, 'That password is wrong');
+    }
+
+    // Requests they posted: close the open ones for everyone watching, then remove them and their replies.
+    const posted = await BloodRequest.find({ requester: user._id }, '_id status notifiedDonors').lean();
+    for (const r of posted.filter((p) => p.status === 'open')) {
+      r.notifiedDonors.forEach((id) => emitToUser(id, 'alert:closed', { _id: r._id, status: 'cancelled' }));
+      broadcast('request:closed', { _id: r._id, status: 'cancelled' });
+    }
+    const postedIds = posted.map((r) => r._id);
+    await DonorResponse.deleteMany({ request: { $in: postedIds } });
+    await BloodRequest.deleteMany({ _id: { $in: postedIds } });
+
+    // Their answers to other people's requests: requesters who were counting on them see it live.
+    const answered = await DonorResponse.find({ donor: user._id, status: 'accepted' })
+      .populate('request', 'requester status')
+      .lean();
+    await DonorResponse.deleteMany({ donor: user._id });
+    for (const { request } of answered) {
+      if (request?.status !== 'open') continue;
+      emitToUser(request.requester, 'response:updated', { requestId: request._id, status: 'withdrawn' });
+      const acceptedCount = await DonorResponse.countDocuments({ request: request._id, status: 'accepted' });
+      broadcast('request:updated', { _id: request._id, acceptedCount });
+    }
+
+    await BloodRequest.updateMany({ notifiedDonors: user._id }, { $pull: { notifiedDonors: user._id } });
+    await OtpCode.deleteMany({ phone: user.phone });
+    await user.deleteOne();
+    res.json({ deleted: true });
   })
 );
 

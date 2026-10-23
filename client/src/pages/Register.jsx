@@ -9,7 +9,7 @@ import CodeStep from '../components/CodeStep.jsx';
 export default function Register() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', phone: '', password: '', gender: 'male', isDonor: true, bloodGroup: '' });
+  const [form, setForm] = useState({ name: '', phone: '', password: '', gender: 'male', isDonor: true, bloodGroup: '', acceptTerms: false });
   const [position, setPosition] = useState(null);
   const [verifyPhone, setVerifyPhone] = useState(false); // whether the server can send codes
   const [sent, setSent] = useState(null); // set once a confirmation code is on its way
@@ -125,6 +125,16 @@ export default function Register() {
               hint="Home or work. Only the distance is shown to others, never this exact spot." />
           </>
         )}
+
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <input type="checkbox" className="mt-0.5 h-5 w-5 shrink-0 accent-blood" required checked={form.acceptTerms}
+            onChange={(e) => setForm({ ...form, acceptTerms: e.target.checked })} />
+          <span>
+            I'm 18 or older and agree to the{' '}
+            <Link to="/terms" target="_blank" className="font-extrabold text-blood underline">terms of use</Link> and{' '}
+            <Link to="/privacy" target="_blank" className="font-extrabold text-blood underline">privacy policy</Link>.
+          </span>
+        </label>
 
         {error && <p className="text-sm font-medium text-blood">{error}</p>}
         <button className="btn-primary w-full py-3" disabled={busy}>

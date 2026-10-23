@@ -1,0 +1,35 @@
+# Render Blueprint: one web service that serves the API and the built React app.
+# Render → New → Blueprint → pick this repo. See DEPLOY.md for the full walkthrough.
+services:
+  - type: web
+    name: bloodlink
+    runtime: node
+    # Free instances sleep after 15 minutes without visitors and take about a minute to wake.
+    # Fine for a soft launch; switch to a paid instance type before relying on it in emergencies.
+    plan: free
+    region: singapore # closest Render region to India; can't be changed later
+    # npm ci installs exactly what the lockfiles say. Build tools are devDependencies,
+    # which is fine because Render only sets NODE_ENV=production at runtime.
+    buildCommand: npm ci && npm ci --prefix server && npm ci --prefix client && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      # Required. Your MongoDB Atlas connection string, including the database name (…mongodb.net/bloodlink?…).
+      - key: MONGO_URI
+        sync: false
+      # Signs login sessions. Render generates a strong random value.
+      - key: JWT_SECRET
+        generateValue: true
+      # Optional: texting codes through MSG91. Leave empty until your DLT template is approved.
+      - key: MSG91_AUTH_KEY
+        sync: false
+      - key: MSG91_TEMPLATE_ID
+        sync: false
+      # Optional: push notifications when the app is closed. Generate with `npm run vapid --prefix server`.
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_EMAIL
+        value: mailto:you@example.com # change to a real contact address

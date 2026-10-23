@@ -209,15 +209,7 @@ bloodlink/
 
 ## Deploy
 
-The simplest route is one service that serves both the API and the built React app:
-
-1. Create a free MongoDB Atlas cluster and copy its connection string.
-2. Push this project to GitHub.
-3. On Render, create a **Web Service** from the repo with:
-   - Build command: `npm run install:all && npm run build`
-   - Start command: `npm start`
-   - Environment variables: `MONGO_URI`, `JWT_SECRET` (a new long random string), `CLIENT_URL` (your Render URL), the MSG91 keys, and the VAPID keys
-4. The server automatically serves `client/dist` when it exists, so the whole app runs at one `https` URL, which phones need for location and notifications.
+**[DEPLOY.md](DEPLOY.md) walks through it step by step.** In short: one Render web service serves both the API and the built React app, with a MongoDB Atlas database. `render.yaml` sets the service up (Render → New → Blueprint), so you only paste in your Atlas connection string. The server serves `client/dist` when it exists, so the whole app runs at one `https` URL, which phones need for location and notifications.
 
 To try the production setup locally: `npm run build`, then `npm start` (the app is at http://localhost:5000).
 
